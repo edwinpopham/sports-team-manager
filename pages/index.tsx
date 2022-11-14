@@ -5,10 +5,10 @@ import type { NextPageWithLayout } from "./_app";
 
 const Login: NextPageWithLayout = () => {
   const { data: session } = useSession();
-  if (session) {
+  if (session !== null && session !== undefined) {
     return (
       <>
-        Signed in as {session.user.email} <br />
+        Signed in as {session?.user?.email} <br />
         <button onClick={() => signOut()}>Sign out</button>
       </>
     );
