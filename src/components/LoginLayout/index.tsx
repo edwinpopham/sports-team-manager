@@ -1,7 +1,8 @@
 import * as React from "react";
+import type { ReactNode } from "react";
 
 type Props = {
-  children: JSX.Element;
+  children: ReactNode;
 };
 
 export const LoginLayout = ({ children }: Props) => {
