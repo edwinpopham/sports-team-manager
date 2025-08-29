@@ -1,9 +1,8 @@
 import type { ReactElement } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { LoginLayout } from "../src/components/LoginLayout/index";
-import type { NextPageWithLayout } from "./_app";
 
-const Login: NextPageWithLayout = () => {
+const Login = () => {
   const { data: session } = useSession();
   if (session !== null && session !== undefined) {
     return (
