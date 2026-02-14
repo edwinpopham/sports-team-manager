@@ -1,0 +1,23 @@
+{
+  "collectCoverageFrom": [
+    "**/*.{js,jsx,ts,tsx}",
+    "!**/*.d.ts",
+    "!**/node_modules/**",
+    "!**/.next/**",
+    "!**/coverage/**",
+    "!jest.config.js"
+  ],
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/$1",
+    "^~/(.*)$": "<rootDir>/$1"
+  },
+  "testEnvironment": "jsdom",
+  "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
+  "testMatch": [
+    "**/__tests__/**/*.(js|jsx|ts|tsx)",
+    "**/*.(test|spec).(js|jsx|ts|tsx)"
+  ],
+  "moduleDirectories": ["node_modules", "<rootDir>/"],
+  "roots": ["<rootDir>"],
+  "modulePaths": ["<rootDir>/app"]
+}

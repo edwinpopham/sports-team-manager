@@ -1,7 +1,7 @@
 // Team management context provider
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Team, Player } from '../types/index';
 import * as storage from '../lib/storage';
 
@@ -45,7 +45,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
     loadTeams();
   }, []);
 
-  const loadTeams = async () => {
+  const loadTeams = useCallback(async () => {
     try {
       setLoading(true);
       const storedTeams = storage.getAllTeams();
@@ -55,7 +55,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const createTeam = async (teamData: Omit<Team, 'id' | 'dateCreated' | 'players'>): Promise<Team> => {
     const newTeam: Team = {
@@ -172,9 +172,9 @@ export function TeamProvider({ children }: TeamProviderProps) {
     return team.players.find(p => p.id === playerId) || null;
   };
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     await loadTeams();
-  };
+  }, [loadTeams]);
 
   const contextValue: TeamContextType = {
     teams,

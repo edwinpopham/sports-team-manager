@@ -5,7 +5,7 @@ const STORAGE_KEY = 'sports-team-manager-data';
 
 // Generic storage operations
 export function getStorageData(): StorageData {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
     return { teams: [], lastUpdated: new Date().toISOString() };
   }
 
@@ -22,7 +22,7 @@ export function getStorageData(): StorageData {
 }
 
 export function saveStorageData(data: StorageData): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
 
   try {
     data.lastUpdated = new Date().toISOString();
@@ -106,6 +106,6 @@ export function generateId(): string {
 }
 
 export function clearAllData(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
   localStorage.removeItem(STORAGE_KEY);
 }

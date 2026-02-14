@@ -49,7 +49,7 @@ export function PlayerForm({
       newErrors.jerseyNumber = 'This jersey number is already taken';
     }
 
-    if (formData.jerseyNumber && (formData.jerseyNumber < 0 || formData.jerseyNumber > 999)) {
+    if (formData.jerseyNumber !== undefined && (formData.jerseyNumber < 0 || formData.jerseyNumber > 999)) {
       newErrors.jerseyNumber = 'Jersey number must be between 0 and 999';
     }
 

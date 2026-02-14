@@ -39,10 +39,11 @@ export default function TeamsPage() {
     }
   };
 
-  useEffect(() => {
-    // Refresh data when component mounts
-    refreshData();
-  }, [refreshData]);
+  // Remove this useEffect - data is already loaded by the TeamProvider
+  // useEffect(() => {
+  //   // Refresh data when component mounts
+  //   refreshData();
+  // }, [refreshData]);
 
   if (loading) {
     return (
