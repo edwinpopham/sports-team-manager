@@ -173,7 +173,7 @@ describe('PlayerForm', () => {
   it('disables submit button when loading', () => {
     render(<PlayerForm onSubmit={mockOnSubmit} isLoading={true} />);
     
-    const submitButton = screen.getByText('Saving...');
+    const submitButton = screen.getByText('Add Player');
     expect(submitButton).toBeDisabled();
   });
 

@@ -61,7 +61,7 @@ export default function TeamPlayersPage() {
     }
 
     try {
-      const newPlayer = await addPlayer(teamId, formData);
+      const newPlayer = await addPlayer(teamId, { ...formData, isActive: true });
       if (newPlayer) {
         setShowPlayerForm(false);
         refreshTeam();
@@ -254,6 +254,7 @@ export default function TeamPlayersPage() {
         {/* Player List */}
         <PlayerList
           players={team.players}
+          teamId={teamId}
           onEditPlayer={handleStartEditPlayer}
           onDeletePlayer={handleDeletePlayer}
           onTogglePlayerStatus={handleTogglePlayerStatus}

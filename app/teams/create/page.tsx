@@ -29,7 +29,7 @@ export default function CreateTeamPage() {
     }
 
     try {
-      const newTeam = await createTeam(formData);
+      const newTeam = await createTeam({ ...formData, isActive: true });
       
       // Redirect to the new team's page
       router.push(`/teams/${newTeam.id}`);

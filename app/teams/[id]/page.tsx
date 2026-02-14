@@ -7,7 +7,8 @@ import Link from 'next/link';
 import { useTeamContext } from '../../contexts/TeamContext';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { calculateTeamStats, getTeamSummary } from '../../lib/teams';
+import { TeamStats } from '../../components/TeamStats';
+import { TeamOverview } from '../../components/TeamOverview';
 
 export default function TeamDetailPage() {
   const params = useParams();
@@ -53,9 +54,6 @@ export default function TeamDetailPage() {
       </div>
     );
   }
-
-  const stats = calculateTeamStats(team);
-  const summary = getTeamSummary(team);
 
   const handleSaveEdit = async () => {
     try {
@@ -178,97 +176,14 @@ export default function TeamDetailPage() {
         </div>
 
         {/* Team Statistics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-blue-600">{stats.totalPlayers}</div>
-              <div className="text-sm text-gray-600">Total Players</div>
-            </div>
-          </Card>
-          
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-green-600">{stats.activePlayers}</div>
-              <div className="text-sm text-gray-600">Active Players</div>
-            </div>
-          </Card>
-          
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-orange-600">{stats.inactivePlayers}</div>
-              <div className="text-sm text-gray-600">Inactive Players</div>
-            </div>
-          </Card>
-          
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-purple-600">
-                {summary.hasFullRoster ? '✓' : stats.activePlayers < 11 ? '⚠️' : '✓'}
-              </div>
-              <div className="text-sm text-gray-600">Roster Status</div>
-            </div>
-          </Card>
+        <div className="mb-8">
+          <TeamStats team={team} />
         </div>
 
-        {/* Position Breakdown */}
-        {stats.positionCounts && Object.keys(stats.positionCounts).length > 0 && (
-          <Card className="mb-8">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Position Breakdown</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                {Object.entries(stats.positionCounts).map(([position, count]) => (
-                  <div key={position} className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{count}</div>
-                    <div className="text-sm text-gray-600">{position}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Recent Players */}
-        {team.players.length > 0 && (
-          <Card className="mb-8">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Recent Players</h2>
-                <Link href={`/teams/${teamId}/players`}>
-                  <Button variant="secondary" size="sm">
-                    View All Players
-                  </Button>
-                </Link>
-              </div>
-              
-              <div className="space-y-3">
-                {team.players
-                  .slice()
-                  .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
-                  .slice(0, 5)
-                  .map((player) => (
-                    <div key={player.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                      <div className="flex items-center gap-3">
-                        {player.jerseyNumber && (
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-bold rounded-full">
-                            {player.jerseyNumber}
-                          </span>
-                        )}
-                        <div>
-                          <div className="font-medium">{player.name}</div>
-                          {player.position && (
-                            <div className="text-sm text-gray-500">{player.position}</div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {new Date(player.dateAdded).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </Card>
-        )}
+        {/* Team Overview */}
+        <div className="mb-8">
+          <TeamOverview team={team} />
+        </div>
 
         {/* Team Actions */}
         <div className="flex flex-wrap gap-4">

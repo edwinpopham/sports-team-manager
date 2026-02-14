@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { PlayerFormData } from '../../types/index';
 import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
+import { LoadingButton } from '../ui/Loading';
 
 interface PlayerFormProps {
   initialData?: Partial<PlayerFormData>;
@@ -134,23 +134,25 @@ export function PlayerForm({
       </div>
 
       <div className="flex space-x-4">
-        <Button 
-          type="submit" 
-          disabled={isLoading}
+        <LoadingButton
+          type="submit"
+          isLoading={isLoading}
+          variant="primary"
           className="flex-1"
         >
-          {isLoading ? 'Saving...' : submitLabel}
-        </Button>
+          {submitLabel}
+        </LoadingButton>
         
         {onCancel && (
-          <Button 
+          <LoadingButton
             type="button" 
             variant="secondary" 
             onClick={onCancel}
             className="flex-1"
+            isLoading={false}
           >
             Cancel
-          </Button>
+          </LoadingButton>
         )}
       </div>
     </form>

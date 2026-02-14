@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Player } from '../types/index';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
@@ -9,10 +10,12 @@ import { sortPlayers, filterPlayers } from '../lib/teams';
 
 interface PlayerListProps {
   players: Player[];
+  teamId?: string; // Add teamId for navigation to player profiles
   onEditPlayer?: (player: Player) => void;
   onDeletePlayer?: (playerId: string) => void;
   onTogglePlayerStatus?: (playerId: string, isActive: boolean) => void;
   showActions?: boolean;
+  showProfileLinks?: boolean;
   title?: string;
 }
 
@@ -20,10 +23,12 @@ type SortOption = 'name' | 'position' | 'jerseyNumber' | 'dateAdded';
 
 export function PlayerList({ 
   players, 
+  teamId,
   onEditPlayer,
   onDeletePlayer,
   onTogglePlayerStatus,
   showActions = true,
+  showProfileLinks = true,
   title = "Team Roster"
 }: PlayerListProps) {
   const [sortBy, setSortBy] = useState<SortOption>('name');
@@ -137,9 +142,17 @@ export function PlayerList({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {player.name}
-                        </h3>
+                        {showProfileLinks && teamId ? (
+                          <Link href={`/teams/${teamId}/players/${player.id}`}>
+                            <h3 className="text-lg font-medium text-gray-900 hover:text-blue-600 cursor-pointer transition-colors">
+                              {player.name}
+                            </h3>
+                          </Link>
+                        ) : (
+                          <h3 className="text-lg font-medium text-gray-900">
+                            {player.name}
+                          </h3>
+                        )}
                         
                         {player.jerseyNumber && (
                           <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-bold rounded-full">
@@ -193,13 +206,21 @@ export function PlayerList({
 
                     {showActions && (
                       <div className="ml-4 flex flex-col sm:flex-row gap-2">
+                        {showProfileLinks && teamId && (
+                          <Link href={`/teams/${teamId}/players/${player.id}`}>
+                            <Button variant="primary" size="sm">
+                              View Profile
+                            </Button>
+                          </Link>
+                        )}
+                        
                         {onEditPlayer && (
                           <Button
                             variant="secondary"
                             size="sm"
                             onClick={() => onEditPlayer(player)}
                           >
-                            Edit
+                            Quick Edit
                           </Button>
                         )}
                         
