@@ -55,19 +55,36 @@ Users can securely sign out of the application and have their authentication sta
 
 ---
 
-### User Story 4 - Team Access Control (Priority: P3)
+### User Story 4 - Team Creation and Management (Priority: P2)
 
-Team creators can control who has access to view and modify their teams, with appropriate permissions based on user authentication.
+All authenticated users can create new teams and automatically become the team manager for teams they create, while maintaining member access to other teams they join.
 
-**Why this priority**: Adds privacy and collaboration features that enhance the value proposition but aren't critical for basic functionality.
+**Why this priority**: Essential for user empowerment and scalable team organization, allowing any user to take initiative in creating teams while maintaining proper ownership boundaries.
 
-**Independent Test**: Can be tested by creating private teams and verifying access controls work correctly for different users.
+**Independent Test**: Can be tested by having any user create a team and verifying they have management permissions for that team while retaining appropriate permissions for other teams.
 
 **Acceptance Scenarios**:
 
-1. **Given** a team creator, **When** they create a team, **Then** they can choose to make it private (visible only to them) or public
-2. **Given** a private team and a non-owner user, **When** the user tries to access the team, **Then** they are denied access
-3. **Given** a team owner, **When** they want to share their team, **Then** they can invite other Google-authenticated users
+1. **Given** any authenticated user, **When** they create a new team, **Then** they automatically become the team manager for that specific team
+2. **Given** a user who is a team manager for one team, **When** they join another team as a member, **Then** they have management permissions for their created team and member permissions for the joined team
+3. **Given** a team manager, **When** they manage their team, **Then** they can add/remove players, modify team settings, and control team visibility
+4. **Given** a user who is a team member (not manager) of a team, **When** they view that team, **Then** they can see team information but cannot modify team settings or roster
+
+---
+
+### User Story 5 - Anonymous User Signin Flow (Priority: P1)
+
+Anonymous users who are not signed in can only access a signin page that prompts them to sign in with Google, ensuring all system access requires authentication.
+
+**Why this priority**: Essential security boundary that prevents unauthorized access and ensures all users are properly authenticated before accessing any team data.
+
+**Independent Test**: Can be tested by accessing the application without signing in and verifying only the signin page is accessible.
+
+**Acceptance Scenarios**:
+
+1. **Given** an anonymous user visits the application, **When** they try to access any page, **Then** they are redirected to the signin page
+2. **Given** an anonymous user on the signin page, **When** they click "Sign in with Google", **Then** they are taken through the Google authentication flow
+3. **Given** an anonymous user, **When** they try to directly access team URLs, **Then** they are redirected to the signin page instead
 
 ---
 
@@ -90,16 +107,25 @@ Team creators can control who has access to view and modify their teams, with ap
 - **FR-005**: System MUST provide secure sign-out functionality that clears user session
 - **FR-006**: System MUST handle authentication errors gracefully and provide user-friendly error messages  
 - **FR-007**: System MUST maintain user authentication state across browser sessions for 7 days before requiring re-authentication
-- **FR-008**: System MUST restrict access to team creation and modification to authenticated users only
-- **FR-009**: System MUST differentiate between public and private teams based on owner preferences
-- **FR-010**: System MUST assign any existing unassigned teams to the administrator user, as teams should only be created by signed-in users
+- **FR-008**: System MUST allow all authenticated users to create new teams
+- **FR-009**: System MUST automatically assign team manager role to the user who creates a team for that specific team
+- **FR-010**: System MUST maintain System Administrator role for managing the entire system and all teams
+- **FR-011**: System MUST allow users to have team manager permissions for teams they created while having member permissions for other teams
+- **FR-012**: System MUST restrict team management actions (modify team settings, manage roster) to team managers and system administrators only
+- **FR-013**: System MUST allow team members to view team information for teams they belong to without modification permissions
+- **FR-014**: System MUST redirect anonymous users to signin page for all application access attempts
+- **FR-015**: System MUST assign any existing unassigned teams to the System Administrator user
+- **FR-016**: System MUST prevent users from managing teams they did not create (unless they are System Administrator)
+- **FR-017**: System MUST allow team managers to control team visibility and member access for their teams
 
 ### Key Entities *(include if feature involves data)*
 
 - **User**: Represents an authenticated user with Google profile information (name, email, profile picture, unique Google ID)
 - **UserSession**: Manages authentication state, login timestamps, and session validity
-- **TeamOwnership**: Links teams to users, defining ownership and access permissions
-- **UserPermissions**: Defines what actions users can perform (create teams, modify teams, view private teams)
+- **Team**: Represents a sports team with associated manager and member relationships
+- **TeamManager**: Links users to teams they created and manage, defining management permissions for specific teams
+- **TeamMember**: Links users to teams they belong to as members, defining read-only access to specific teams
+- **SystemAdministrator**: Special role for users who can manage the entire system and all teams regardless of ownership
 
 ## Success Criteria *(mandatory)*
 
@@ -108,6 +134,8 @@ Team creators can control who has access to view and modify their teams, with ap
 - **SC-001**: Users can complete the sign-in process in under 30 seconds including Google authentication flow
 - **SC-002**: Authentication success rate above 95% for users with valid Google accounts  
 - **SC-003**: User session remains valid for the specified duration without requiring re-authentication
-- **SC-004**: 90% of users successfully access their teams after signing in on first attempt
-- **SC-005**: System prevents unauthorized access to private teams in 100% of test cases
-- **SC-006**: Sign-out process completes in under 5 seconds and properly clears all user data from browser
+- **SC-004**: 90% of users successfully access their appropriate team data based on their role after signing in on first attempt
+- **SC-005**: System prevents unauthorized access across all role boundaries in 100% of test cases
+- **SC-006**: Anonymous users are redirected to signin page in under 2 seconds for any access attempt
+- **SC-007**: Role-based permissions are enforced correctly for 100% of user actions across all roles
+- **SC-008**: Sign-out process completes in under 5 seconds and properly clears all user data from browser
