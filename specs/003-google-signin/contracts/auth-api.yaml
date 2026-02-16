@@ -1,0 +1,752 @@
+openapi: 3.0.3
+info:
+  title: Google Identity Sign-In API
+  version: 1.0.0
+  description: |
+    API contracts for Google Identity Services authentication system in Sports Team Manager.
+    Implements user authentication, session management, and role-based access control.
+    
+    **Security Model**: All endpoints except `/auth/signin` require valid NextAuth.js session.
+    **Role Permissions**: Enforced at endpoint level based on user roles and team ownership.
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://sports-team-manager.vercel.app/api  
+    description: Production server
+
+security:
+  - sessionAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/signin:
+    get:
+      summary: Initiate Google sign-in flow
+      description: |
+        Redirects user to Google Identity Services for authentication.
+        Implements FR-001, FR-002 for Google OAuth integration.
+      operationId: initiateGoogleSignIn
+      security: []  # Public endpoint
+      responses:
+        '302':
+          description: Redirect to Google OAuth endpoint
+          headers:
+            Location:
+              description: Google OAuth authorization URL
+              schema:
+                type: string
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/callback:
+    get:
+      summary: Handle Google OAuth callback
+      description: |
+        Processes Google OAuth callback and establishes user session.
+        Creates user record on first sign-in. Implements FR-003 for profile data.
+      operationId: handleGoogleCallback
+      security: []  # Public endpoint - validates OAuth state
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: Authorization code from Google OAuth
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          description: CSRF protection state parameter
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Successful authentication - redirect to dashboard
+          headers:
+            Set-Cookie:
+              description: NextAuth.js session cookie
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+
+  /auth/signout:
+    post:
+      summary: Sign out user
+      description: |
+        Implements FR-005 for secure sign-out functionality.
+        Clears user session and revokes authentication state.
+      operationId: signOutUser
+      responses:
+        '200':
+          description: Successfully signed out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully signed out"
+                  redirectUrl:
+                    type: string
+                    example: "/signin"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/session:
+    get:
+      summary: Get current user session
+      description: |
+        Returns current user authentication state and profile information.
+        Implements FR-003 for user profile display. Used for session validation.
+      operationId: getCurrentSession
+      responses:
+        '200':
+          description: Current user session information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSession'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # User Management Endpoints  
+  /users/profile:
+    get:
+      summary: Get user profile
+      description: |
+        Returns detailed user profile including team memberships and roles.
+        Implements FR-003 for comprehensive profile information display.
+      operationId: getUserProfile
+      responses:
+        '200':
+          description: User profile information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      summary: Update user profile
+      description: |
+        Updates user profile information (limited to non-Google sourced fields).
+        System admin role changes require separate endpoint.
+      operationId: updateUserProfile  
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdate'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Team Role Management Endpoints
+  /teams/{teamId}/roles:
+    get:
+      summary: Get team member roles
+      description: |
+        Returns all user roles for specified team. Implements FR-013 for member viewing.
+        Team managers and system admins can view all roles. Members see limited info.
+      operationId: getTeamRoles
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Team roles information  
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamRole'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Add team member
+      description: |
+        Adds user to team with specified role. Implements FR-011 for role management.
+        Only team managers and system admins can add members.
+      operationId: addTeamMember
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTeamMemberRequest'
+      responses:
+        '201':
+          description: Team member added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamRole'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: User already has role in team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+
+  /teams/{teamId}/roles/{userId}:
+    patch:
+      summary: Update team member role
+      description: |
+        Updates user's role in specified team. Implements FR-012 for management restrictions.
+        Team creator role cannot be modified. Only managers and system admins can update roles.
+      operationId: updateTeamMemberRole
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamRole'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Remove team member
+      description: |
+        Removes user from team. Team creators cannot be removed unless team is deleted.
+        Only team managers and system admins can remove members.
+      operationId: removeTeamMember
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '204':
+          description: Team member removed successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cannot remove team creator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+
+  # Team Management with Authentication
+  /teams:
+    post:
+      summary: Create new team
+      description: |
+        Creates new team with authenticated user as manager. Implements FR-008, FR-009.
+        All authenticated users can create teams and automatically become team managers.
+      operationId: createTeam
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeamRequest'
+      responses:
+        '201':
+          description: Team created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamWithRoles'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      summary: Get user's teams
+      description: |
+        Returns teams accessible to authenticated user based on their roles.
+        Implements role-based team filtering per FR-011.
+      operationId: getUserTeams
+      responses:
+        '200':
+          description: User's accessible teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamWithRoles'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Migration Endpoints
+  /migration/claim-teams:
+    post:
+      summary: Claim localStorage teams
+      description: |
+        Allows authenticated user to claim teams from localStorage during migration.
+        Implements lazy migration strategy from research phase.
+      operationId: claimLocalStorageTeams
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimTeamsRequest'
+      responses:
+        '200':
+          description: Teams claimed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimTeamsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /migration/export-teams:
+    get:
+      summary: Export localStorage teams
+      description: |
+        Exports current localStorage teams as backup during migration period.
+        Provides user data safety during authentication transition.
+      operationId: exportLocalStorageTeams
+      security: []  # Public during migration period only
+      responses:
+        '200':
+          description: Team data export
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamExportData'
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth.js session cookie
+
+  parameters:
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      description: Unique team identifier
+      schema:
+        type: string
+        format: uuid
+
+    UserId:
+      name: userId
+      in: path
+      required: true
+      description: Unique user identifier
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # Core User Schemas
+    User:
+      type: object
+      required:
+        - id
+        - googleId
+        - email
+        - name
+        - isSystemAdmin
+        - createdAt
+        - lastLoginAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        googleId:
+          type: string
+          description: Google account unique identifier
+        email:
+          type: string
+          format: email
+          description: User email from Google account
+        name:
+          type: string
+          description: Display name from Google profile
+        profilePicture:
+          type: string
+          format: uri
+          description: Google profile image URL
+        isSystemAdmin:
+          type: boolean
+          description: System administrator role flag
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        lastLoginAt:
+          type: string
+          format: date-time
+          description: Most recent authentication timestamp
+
+    UserSession:
+      type: object
+      required:
+        - user
+        - expires
+        - isActive
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        expires:
+          type: string
+          format: date-time
+          description: Session expiry time (7 days from creation)
+        isActive:
+          type: boolean
+          description: Session active status
+        sessionStart:
+          type: string
+          format: date-time
+          description: Session initiation timestamp
+
+    UserProfile:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            teamRoles:
+              type: array
+              items:
+                $ref: '#/components/schemas/TeamRole'
+              description: User's team role assignments
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated display name
+      description: Limited profile updates (Google-sourced fields read-only)
+
+    # Team Role Schemas
+    TeamRole:
+      type: object
+      required:
+        - id
+        - userId
+        - teamId
+        - role
+        - assignedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique role assignment identifier
+        userId:
+          type: string
+          format: uuid
+          description: User identifier
+        teamId:
+          type: string
+          format: uuid
+          description: Team identifier
+        role:
+          type: string
+          enum: [MANAGER, MEMBER]
+          description: User role for this team
+        assignedAt:
+          type: string
+          format: date-time
+          description: Role assignment timestamp
+        assignedBy:
+          type: string
+          format: uuid
+          description: User who assigned this role (optional)
+
+    TeamWithRoles:
+      type: object
+      allOf:
+        - type: object  # Base Team properties would be inherited
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            description:
+              type: string
+        - type: object
+          properties:
+            createdBy:
+              type: string
+              format: uuid
+              description: Team creator user ID
+            isPublic:
+              type: boolean
+              description: Team visibility setting
+            createdAt:
+              type: string
+              format: date-time
+            roles:
+              type: array
+              items:
+                $ref: '#/components/schemas/TeamRole'
+              description: Team member roles
+
+    # Request/Response Schemas
+    CreateTeamRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Team name
+        description:
+          type: string
+          description: Team description
+        isPublic:
+          type: boolean
+          default: false
+          description: Team visibility setting
+
+    AddTeamMemberRequest:
+      type: object
+      required:
+        - email
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email of user to add
+        role:
+          type: string
+          enum: [MANAGER, MEMBER]
+          description: Role to assign to user
+
+    UpdateRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          enum: [MANAGER, MEMBER]
+          description: New role to assign
+
+    ClaimTeamsRequest:
+      type: object
+      required:
+        - teams
+      properties:
+        teams:
+          type: array
+          items:
+            type: object
+            properties:
+              localId:
+                type: string
+                description: localStorage team identifier
+              name:
+                type: string
+                description: Team name
+              # Additional team data fields
+          description: Teams to claim from localStorage
+
+    ClaimTeamsResponse:
+      type: object
+      properties:
+        claimedTeams:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamWithRoles'
+        conflictedTeams:
+          type: array
+          items:
+            type: object
+            properties:
+              localId:
+                type: string
+              reason:
+                type: string
+              suggestedName:
+                type: string
+
+    TeamExportData:
+      type: object
+      properties:
+        exportDate:
+          type: string
+          format: date-time
+        teams:
+          type: array
+          items:
+            type: object  # Full team data structure
+        metadata:
+          type: object
+          properties:
+            version:
+              type: string
+            format:
+              type: string
+
+    # Error Schemas
+    AuthError:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: User-friendly error message
+        redirectUrl:
+          type: string
+          description: URL to redirect for recovery
+
+    ConflictError:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "CONFLICT"
+        message:
+          type: string
+          description: Conflict description
+        conflictType:
+          type: string
+          description: Type of conflict encountered
+
+  responses:
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "BAD_REQUEST"
+              message:
+                type: string
+                example: "Invalid request data"
+              details:
+                type: array
+                items:
+                  type: string
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "UNAUTHORIZED"
+              message:
+                type: string
+                example: "Authentication required"
+              redirectUrl:
+                type: string
+                example: "/signin"
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "FORBIDDEN"
+              message:
+                type: string
+                example: "Insufficient permissions for this operation"
+              requiredRole:
+                type: string
+                description: Role required for this operation
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "NOT_FOUND"
+              message:
+                type: string
+                example: "Requested resource not found"
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "INTERNAL_SERVER_ERROR"
+              message:
+                type: string
+                example: "An unexpected error occurred"
