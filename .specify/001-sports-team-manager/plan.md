@@ -1,7 +1,7 @@
 # Implementation Plan: Sports Team Manager
 
 **Branch**: `001-sports-team-manager` | **Date**: 2026-02-13 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/001-sports-team-manager/spec.md`
+**Input**: Feature specification from `/.specify/001-sports-team-manager/spec.md`
 
 ## Summary
 
@@ -32,7 +32,7 @@ Build a sports team management system using Next.js that allows coaches and mana
 ### Documentation (this feature)
 
 ```text
-specs/001-sports-team-manager/
+.specify/001-sports-team-manager/
 ├── plan.md              # This file
 ├── spec.md              # Feature specification
 └── tasks.md             # Implementation tasks (to be generated)

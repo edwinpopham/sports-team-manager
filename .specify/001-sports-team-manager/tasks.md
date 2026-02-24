@@ -1,6 +1,6 @@
 # Tasks: Sports Team Manager
 
-**Input**: Design documents from `/specs/001-sports-team-manager/`
+**Input**: Design documents from `/.specify/001-sports-team-manager/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories)
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
