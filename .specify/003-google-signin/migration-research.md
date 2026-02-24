@@ -243,7 +243,7 @@ interface TeamNamingConflict {
 **Handling Strategy**:
 - Maintain separate player records per team initially
 - Provide player merging tools post-migration
-- Allow users to resolveduplicates voluntarily
+- Allow users to resolve duplicates voluntarily
 - Admin oversight for suspicious duplications
 
 ### 2.4 Backup and Rollback Strategies
